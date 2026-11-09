@@ -1,9 +1,11 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "org.notnightsky.companion.mixin.client",
+  "package": "org.notnightsky.companion.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
+    "ScreenMixin",
+    "HudMixin"
   ],
   "injectors": {
     "defaultRequire": 1
