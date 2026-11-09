@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "companion",
+  "version": "${version}",
+  "name": "companion",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/companion/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "org.notnightsky.companion.client.CompanionClient"
+    ],
+    "main": [
+      "org.notnightsky.companion.Companion"
+    ]
+  },
+  "mixins": [
+    "companion.mixins.json",
+    {
+      "config": "companion.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
