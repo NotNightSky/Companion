@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class IdentifierArray {
+
     public static List<Identifier> toTextureArrayList(Textures.TextureSet set) {
         List<Identifier> identifiers = new ArrayList<>();
         Path baseDir = set.jsonPath().getParent();
@@ -27,10 +28,23 @@ public class IdentifierArray {
         }
 
         for (JsonElement element : filesArray) {
-            String fileName = element.getAsString();
-            Identifier id = loadTexture(prefix + fileName, baseDir.resolve(fileName + ".png"));
-            if (id != null) {
-                identifiers.add(id);
+            String rawName = element.getAsString();
+            String cleanName = rawName.replaceFirst("\\.(png|gif)$", "");
+            Path targetPath = Textures.resolveTexturePath(baseDir, rawName, cleanName);
+
+            if (targetPath == null) {
+                CompanionClient.LOGGER.warn("Texture file not found for '{}' in {}", rawName, baseDir);
+                continue;
+            }
+
+            String fileNameLower = targetPath.getFileName().toString().toLowerCase();
+            if (fileNameLower.endsWith(".gif")) {
+                identifiers.addAll(loadGifTextures(prefix + cleanName, targetPath));
+            } else {
+                Identifier id = loadTexture(prefix + cleanName, targetPath);
+                if (id != null) {
+                    identifiers.add(id);
+                }
             }
         }
 
@@ -45,9 +59,26 @@ public class IdentifierArray {
             Minecraft.getInstance().getTextureManager().register(id, texture);
             return id;
         } catch (IOException | RuntimeException e) {
-            CompanionClient.LOGGER.error("Failed to load texture {}", png, e);
+            CompanionClient.LOGGER.error("Failed to load PNG texture {}", png, e);
         }
         return null;
+    }
+
+    public static List<Identifier> loadGifTextures(String baseName, Path gif) {
+        List<Identifier> frameIds = new ArrayList<>();
+        try {
+            List<Textures.GifFrame> frames = Textures.decodeGif(gif);
+            for (int i = 0; i < frames.size(); i++) {
+                String frameName = baseName + "_frame_" + i;
+                DynamicTexture texture = new DynamicTexture(() -> "companion/" + frameName, frames.get(i).image());
+                Identifier id = CompanionClient.id(frameName);
+                Minecraft.getInstance().getTextureManager().register(id, texture);
+                frameIds.add(id);
+            }
+        } catch (IOException | RuntimeException e) {
+            CompanionClient.LOGGER.error("Failed to load GIF texture {}", gif, e);
+        }
+        return frameIds;
     }
 
     public static void unload(List<Identifier> identifiers) {
