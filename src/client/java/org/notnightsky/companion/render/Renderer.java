@@ -8,10 +8,12 @@ import net.minecraft.util.Util;
 import java.util.ArrayList;
 import java.util.List;
 
-public class renderer {
-    private static final renderer INSTANCE = new renderer();
+public class Renderer {
+    private static final Renderer INSTANCE = new Renderer();
     private static final long FRAME_TIME_MS = 1000;
     private final List<Identifier> textures = new ArrayList<>();
+    private int sizeW;
+    private int sizeH;
 
     public static void setTextures(List<Identifier> textures) {
         INSTANCE.textures.clear();
@@ -31,10 +33,19 @@ public class renderer {
 
     public static void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         if (!INSTANCE.textures.isEmpty()) {
-            int size = 100;
-            int x = graphics.guiWidth() - size;
-            int y = graphics.guiHeight() - size;
-            graphics.blit(texture(frameIndex()), x, y, x + size, y + size, 0.0F, 1.0F, 0.0F, 1.0F);
+            INSTANCE.sizeW = 32;
+            INSTANCE.sizeH = 16;
+            int x = graphics.guiWidth() - INSTANCE.sizeW;
+            int y = graphics.guiHeight() - INSTANCE.sizeH;
+            graphics.blit(texture(frameIndex()), x, y, x + INSTANCE.sizeW, y + INSTANCE.sizeH, 0.0F, 1.0F, 0.0F, 1.0F);
         }
+    }
+
+    public static void setWidth(int width) {
+        INSTANCE.sizeW = width;
+    }
+
+    public static void setHeight(int height) {
+        INSTANCE.sizeH = height;
     }
 }
