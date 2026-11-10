@@ -1,9 +1,10 @@
-package org.notnightsky.companion.client;
+package org.notnightsky.companion;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.Identifier;
+import org.notnightsky.companion.config.ConfigManager;
 import org.notnightsky.companion.render.Renderer;
 import org.notnightsky.companion.util.IdentifierArray;
 import org.notnightsky.companion.util.Textures;
@@ -19,10 +20,9 @@ import java.util.List;
 
 public class CompanionClient implements ClientModInitializer {
     private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("companion");
-    private static final List<TextureSet> TEXTURE_SETS = new ArrayList<>();
+    public static final List<TextureSet> TEXTURE_SETS = new ArrayList<>();
     private static List<Identifier> activeTextures = List.of();
     private static int activeSetIndex = -1;
-    private static final int TEMP_COMPANION_INDEX = 1;
     public static final Logger LOGGER = LoggerFactory.getLogger("companion");
 
     public static Path getConfigPath() {
@@ -40,12 +40,19 @@ public class CompanionClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         getConfigPath();
+        ConfigManager config = ConfigManager.getInstance();
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
+            config.load();
+            Renderer.setFrameTime(config.getFrametime());
+            Renderer.setWidth(config.getWidth());
+            Renderer.setHeight(config.getHeight());
             TEXTURE_SETS.addAll(Textures.scan());
-            select(TEMP_COMPANION_INDEX);
+            select(config.getSelected());
         });
-        Renderer.setHeight(16);
-        Renderer.setWidth(32);
+    }
+
+    public static int getActiveSetIndex() {
+        return activeSetIndex;
     }
 
     public static void select(int index) {
@@ -56,6 +63,24 @@ public class CompanionClient implements ClientModInitializer {
         activeTextures = IdentifierArray.toTextureArrayList(TEXTURE_SETS.get(index));
         activeSetIndex = index;
         Renderer.setTextures(activeTextures);
+        ConfigManager config = ConfigManager.getInstance();
+        config.setSelected(Textures.relativePath(TEXTURE_SETS.get(index).jsonPath()));
+        config.save();
+    }
+
+    public static void select(String relativePath) {
+        if (relativePath == null || relativePath.isBlank()) {
+            select(0);
+            return;
+        }
+        for (int i = 0; i < TEXTURE_SETS.size(); i++) {
+            if (Textures.relativePath(TEXTURE_SETS.get(i).jsonPath()).equals(relativePath)) {
+                select(i);
+                return;
+            }
+        }
+        LOGGER.warn("Configured texture set '{}' was not found, falling back to the first one.", relativePath);
+        select(0);
     }
 
     public static Identifier id(String path) {

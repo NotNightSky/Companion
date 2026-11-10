@@ -10,8 +10,8 @@ import java.util.List;
 
 public class Renderer {
     private static final Renderer INSTANCE = new Renderer();
-    private static final long FRAME_TIME_MS = 1000;
     private final List<Identifier> textures = new ArrayList<>();
+    private long frameTimeMs = 1000;
     private int sizeW;
     private int sizeH;
 
@@ -28,13 +28,11 @@ public class Renderer {
     }
 
     private static int frameIndex() {
-        return (int) (Util.getMillis() / FRAME_TIME_MS % INSTANCE.textures.size());
+        return (int) (Util.getMillis() / INSTANCE.frameTimeMs % INSTANCE.textures.size());
     }
 
     public static void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         if (!INSTANCE.textures.isEmpty()) {
-            INSTANCE.sizeW = 32;
-            INSTANCE.sizeH = 16;
             int x = graphics.guiWidth() - INSTANCE.sizeW;
             int y = graphics.guiHeight() - INSTANCE.sizeH;
             graphics.blit(texture(frameIndex()), x, y, x + INSTANCE.sizeW, y + INSTANCE.sizeH, 0.0F, 1.0F, 0.0F, 1.0F);
@@ -47,5 +45,9 @@ public class Renderer {
 
     public static void setHeight(int height) {
         INSTANCE.sizeH = height;
+    }
+
+    public static void setFrameTime(long frameTimeMs) {
+        INSTANCE.frameTimeMs = Math.max(1, frameTimeMs);
     }
 }

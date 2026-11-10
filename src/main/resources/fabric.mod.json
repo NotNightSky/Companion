@@ -11,10 +11,13 @@
   "environment": "client",
   "entrypoints": {
     "client": [
-      "org.notnightsky.companion.client.CompanionClient"
+      "org.notnightsky.companion.CompanionClient"
     ],
     "main": [
       "org.notnightsky.companion.Companion"
+    ],
+    "modmenu": [
+      "org.notnightsky.companion.ModmenuImpl"
     ]
   },
   "mixins": [
@@ -24,9 +27,15 @@
       "environment": "client"
     }
   ],
+  "custom": {
+    "modmenu": {
+      "update_checker": true
+    }
+  },
   "depends": {
     "fabricloader": ">=${loader_version}",
     "fabric-api": "*",
-    "minecraft": "${minecraft_version}"
+    "minecraft": "${minecraft_version}",
+    "modmenu": "${modmenu_version}"
   }
 }

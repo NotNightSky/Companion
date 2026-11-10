@@ -6,7 +6,7 @@ import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.Identifier;
-import org.notnightsky.companion.client.CompanionClient;
+import org.notnightsky.companion.CompanionClient;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -19,8 +19,9 @@ public class IdentifierArray {
     public static List<Identifier> toTextureArrayList(Textures.TextureSet set) {
         List<Identifier> identifiers = new ArrayList<>();
         Path baseDir = set.jsonPath().getParent();
-        String prefix = relativeDir(CompanionClient.getConfigPath(), baseDir);
-        JsonArray filesArray = set.json().getAsJsonArray("files");
+        String dir = Textures.relativePath(baseDir);
+        String prefix = dir.isEmpty() ? "" : dir + "/";
+        JsonArray filesArray = set.json().getAsJsonArray("textures");
         if (filesArray == null) {
             return identifiers;
         }
@@ -53,13 +54,5 @@ public class IdentifierArray {
         for (Identifier id : identifiers) {
             Minecraft.getInstance().getTextureManager().release(id);
         }
-    }
-
-    private static String relativeDir(Path configRoot, Path dir) {
-        Path relative = configRoot.relativize(dir);
-        if (relative.getNameCount() == 0) {
-            return "";
-        }
-        return relative.toString().replace('\\', '/') + "/";
     }
 }

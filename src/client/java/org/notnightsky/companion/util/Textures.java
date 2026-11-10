@@ -3,7 +3,7 @@ package org.notnightsky.companion.util;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import org.notnightsky.companion.client.CompanionClient;
+import org.notnightsky.companion.CompanionClient;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -18,9 +18,10 @@ public class Textures {
     public static List<TextureSet> scan() {
         try (Stream<Path> stream = Files.walk(CompanionClient.getConfigPath())) {
             return stream.filter(path -> path.toString().endsWith(".json"))
+                    .filter(path -> !path.getFileName().toString().equals("config.json"))
                     .sorted()
                     .map(path -> new TextureSet(path, load(path)))
-                    .filter(set -> set.json() != null && set.json().has("files"))
+                    .filter(set -> set.json() != null && set.json().has("textures"))
                     .toList();
         } catch (IOException e) {
             CompanionClient.LOGGER.error("Failed to scan the mod configuration folder for texture sets.", e);
@@ -35,5 +36,10 @@ public class Textures {
             CompanionClient.LOGGER.warn("Failed to parse {}, skipping it.", jsonPath, e);
         }
         return null;
+    }
+
+    public static String relativePath(Path jsonPath) {
+        Path relative = CompanionClient.getConfigPath().relativize(jsonPath);
+        return relative.toString().replace('\\', '/');
     }
 }
