@@ -1,10 +1,8 @@
 package org.notnightsky.companion.render;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.ARGB;
 import net.minecraft.util.Util;
 
 import java.util.ArrayList;
@@ -16,11 +14,6 @@ public class Renderer {
     private long frameTimeMs = 1000;
     private int sizeW;
     private int sizeH;
-    private Anchor anchor = Anchor.BOTTOM_RIGHT;
-    private int offsetX;
-    private int offsetY;
-    private boolean visible = true;
-    private double opacity = 1.0;
 
     public static void setTextures(List<Identifier> textures) {
         INSTANCE.textures.clear();
@@ -39,49 +32,22 @@ public class Renderer {
     }
 
     public static void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
-        if (INSTANCE.textures.isEmpty() || !INSTANCE.visible) {
-            return;
+        if (!INSTANCE.textures.isEmpty()) {
+            int x = graphics.guiWidth() - INSTANCE.sizeW;
+            int y = graphics.guiHeight() - INSTANCE.sizeH;
+            graphics.blit(texture(frameIndex()), x, y, x + INSTANCE.sizeW, y + INSTANCE.sizeH, 0.0F, 1.0F, 0.0F, 1.0F);
         }
-        int x = switch (INSTANCE.anchor) {
-            case TOP_LEFT, BOTTOM_LEFT -> INSTANCE.offsetX;
-            case TOP_RIGHT, BOTTOM_RIGHT -> graphics.guiWidth() - INSTANCE.sizeW - INSTANCE.offsetX;
-        };
-        int y = switch (INSTANCE.anchor) {
-            case TOP_LEFT, TOP_RIGHT -> INSTANCE.offsetY;
-            case BOTTOM_LEFT, BOTTOM_RIGHT -> graphics.guiHeight() - INSTANCE.sizeH - INSTANCE.offsetY;
-        };
-        int color = ARGB.white((int) (INSTANCE.opacity * 255.0));
-        graphics.blit(RenderPipelines.GUI_TEXTURED, texture(frameIndex()), x, y, 0.0F, 0.0F, INSTANCE.sizeW, INSTANCE.sizeH, INSTANCE.sizeW, INSTANCE.sizeH, color);
     }
 
     public static void setWidth(int width) {
-        INSTANCE.sizeW = Math.max(1, width);
+        INSTANCE.sizeW = width;
     }
 
     public static void setHeight(int height) {
-        INSTANCE.sizeH = Math.max(1, height);
+        INSTANCE.sizeH = height;
     }
 
     public static void setFrameTime(long frameTimeMs) {
         INSTANCE.frameTimeMs = Math.max(1, frameTimeMs);
-    }
-
-    public static void setAnchor(Anchor anchor) {
-        if (anchor != null) {
-            INSTANCE.anchor = anchor;
-        }
-    }
-
-    public static void setOffset(int x, int y) {
-        INSTANCE.offsetX = x;
-        INSTANCE.offsetY = y;
-    }
-
-    public static void setVisibility(boolean visible) {
-        INSTANCE.visible = visible;
-    }
-
-    public static void setOpacity(double opacity) {
-        INSTANCE.opacity = Math.clamp(opacity, 0.0, 1.0);
     }
 }
