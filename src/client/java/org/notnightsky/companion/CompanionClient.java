@@ -43,8 +43,6 @@ public class CompanionClient implements ClientModInitializer {
         ConfigManager config = ConfigManager.getInstance();
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
             config.load();
-            Renderer.setVisibility(config.isVisible());
-            Renderer.setOpacity(config.getOpacity());
             TEXTURE_SETS.addAll(Textures.scan());
             select(config.getSelected());
         });
@@ -62,22 +60,10 @@ public class CompanionClient implements ClientModInitializer {
         activeTextures = IdentifierArray.toTextureArrayList(TEXTURE_SETS.get(index));
         activeSetIndex = index;
         Renderer.setTextures(activeTextures);
-        // applyResolvedValues(TEXTURE_SETS.get(index));
         ConfigManager config = ConfigManager.getInstance();
+        config.setActiveSuggestions(Textures.parseSuggestions(TEXTURE_SETS.get(index).json()));
         config.setSelected(Textures.relativePath(TEXTURE_SETS.get(index).jsonPath()));
         config.save();
-    }
-
-    private static void applyResolvedValues(TextureSet set) {
-        Textures.Suggestions suggestions = Textures.parseSuggestions(set.json());
-        ConfigManager config = ConfigManager.getInstance();
-        Renderer.setWidth(config.getWidth() != null ? config.getWidth() : suggestions.width() != null ? suggestions.width() : ConfigManager.DEFAULT_WIDTH);
-        Renderer.setHeight(config.getHeight() != null ? config.getHeight() : suggestions.height() != null ? suggestions.height() : ConfigManager.DEFAULT_HEIGHT);
-        Renderer.setFrameTime(config.getFrametime() != null ? config.getFrametime() : suggestions.frametime() != null ? suggestions.frametime() : ConfigManager.DEFAULT_FRAMETIME);
-        Renderer.setAnchor(config.getAnchor() != null ? config.getAnchor() : suggestions.anchor() != null ? suggestions.anchor() : ConfigManager.DEFAULT_ANCHOR);
-        Renderer.setOffset(config.getOffsetX(), config.getOffsetY());
-        Renderer.setVisibility(config.isVisible());
-        Renderer.setOpacity(config.getOpacity());
     }
 
     public static void select(String relativePath) {

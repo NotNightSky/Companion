@@ -22,12 +22,17 @@ public class IdentifierArray {
         Path baseDir = set.jsonPath().getParent();
         String dir = Textures.relativePath(baseDir);
         String prefix = dir.isEmpty() ? "" : dir + "/";
-        JsonArray filesArray = set.json().getAsJsonArray("textures");
-        if (filesArray == null) {
+        if (!set.json().has("textures") || !set.json().get("textures").isJsonArray()) {
+            CompanionClient.LOGGER.warn("'textures' is missing or not an array in {}, loading nothing.", set.jsonPath());
             return identifiers;
         }
+        JsonArray filesArray = set.json().getAsJsonArray("textures");
 
         for (JsonElement element : filesArray) {
+            if (!element.isJsonPrimitive()) {
+                CompanionClient.LOGGER.warn("Ignoring non-string texture entry '{}' in {}.", element, set.jsonPath());
+                continue;
+            }
             String rawName = element.getAsString();
             String cleanName = rawName.replaceFirst("\\.(png|gif)$", "");
             Path targetPath = Textures.resolveTexturePath(baseDir, rawName, cleanName);

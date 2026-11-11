@@ -1,11 +1,11 @@
 {
-  "name": "Cat Alt",
-  "author": "notnightsky",
+  "name": "White Cat",
+  "author": "Elthen",
   "description": "An alternate cat companion",
   "suggested": {
-    "width": 100,
-    "height": 100,
-    "frametime": 100,
+    "width": 32,
+    "height": 16,
+    "frametime": 1000,
     "anchor": "bottom_right"
   },
   "textures": [

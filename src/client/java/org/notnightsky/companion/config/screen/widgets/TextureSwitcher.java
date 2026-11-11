@@ -17,9 +17,11 @@ import java.util.List;
 
 public class TextureSwitcher extends AbstractWidget {
     private final Font font = Minecraft.getInstance().font;
+    private final Runnable onSelect;
 
-    public TextureSwitcher(int x, int y, int width, int height) {
+    public TextureSwitcher(int x, int y, int width, int height, Runnable onSelect) {
         super(x, y, width, height, Component.literal("texture set switcher"));
+        this.onSelect = onSelect;
     }
 
     @Override
@@ -69,6 +71,7 @@ public class TextureSwitcher extends AbstractWidget {
         }
 
         CompanionClient.select(next);
+        this.onSelect.run();
     }
 
     // dunno how this works but it works!!

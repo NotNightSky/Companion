@@ -39,7 +39,7 @@ public class Textures {
                     .filter(path -> !path.getFileName().toString().equals("config.json"))
                     .sorted()
                     .map(path -> new TextureSet(path, load(path)))
-                    .filter(set -> set.json() != null && set.json().has("textures"))
+                    .filter(set -> set.json() != null && set.json().has("textures") && set.json().get("textures").isJsonArray())
                     .toList();
         } catch (IOException e) {
             CompanionClient.LOGGER.error("Failed to scan the mod configuration folder for texture sets.", e);
