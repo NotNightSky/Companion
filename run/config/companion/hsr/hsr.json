@@ -1,7 +1,13 @@
 {
-  "suggested_height": 100,
-  "suggested_width": 100,
-  "suggested_frametime": 100,
+  "name": "HSR",
+  "author": "notnightsky",
+  "description": "An HSR companion",
+  "suggested": {
+    "width": 100,
+    "height": 100,
+    "frametime": 100,
+    "anchor": "bottom_right"
+  },
   "textures": [
     "frame_0",
     "frame_1",

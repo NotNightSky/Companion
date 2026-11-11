@@ -1,7 +1,13 @@
 {
-  "suggested_height": 100,
-  "suggested_width": 100,
-  "suggested_frametime": 100,
+  "name": "Cat Alt",
+  "author": "notnightsky",
+  "description": "An alternate cat companion",
+  "suggested": {
+    "width": 100,
+    "height": 100,
+    "frametime": 100,
+    "anchor": "bottom_right"
+  },
   "textures": [
     "l0",
     "l1",
