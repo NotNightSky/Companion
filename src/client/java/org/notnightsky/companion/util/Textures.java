@@ -5,6 +5,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.mojang.blaze3d.platform.NativeImage;
 import org.notnightsky.companion.CompanionClient;
+import org.notnightsky.companion.render.Anchor;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -186,5 +187,65 @@ public class Textures {
         g.drawImage(src, 0, 0, null);
         g.dispose();
         return copy;
+    }
+
+    public record Suggestions(Integer width, Integer height, Long frametime, Anchor anchor) {}
+
+    public static Suggestions parseSuggestions(JsonObject json) {
+        Integer width = null;
+        Integer height = null;
+        Long frametime = null;
+        Anchor anchor = null;
+
+        if (json.has("suggested") && json.get("suggested").isJsonObject()) {
+            JsonObject suggested = json.getAsJsonObject("suggested");
+            width = readPositiveInt(suggested, "width");
+            height = readPositiveInt(suggested, "height");
+            frametime = readPositiveLong(suggested, "frametime");
+            anchor = readAnchor(suggested, "anchor");
+        }
+        if (width == null) {
+            width = readPositiveInt(json, "suggested_width");
+        }
+        if (height == null) {
+            height = readPositiveInt(json, "suggested_height");
+        }
+        if (frametime == null) {
+            frametime = readPositiveLong(json, "suggested_frametime");
+        }
+        if (anchor == null) {
+            anchor = readAnchor(json, "suggested_anchor");
+        }
+
+        return new Suggestions(width, height, frametime, anchor);
+    }
+
+    private static Integer readPositiveInt(JsonObject obj, String key) {
+        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
+            return null;
+        }
+        try {
+            return Math.max(1, obj.get(key).getAsInt());
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    private static Long readPositiveLong(JsonObject obj, String key) {
+        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
+            return null;
+        }
+        try {
+            return Math.max(1, obj.get(key).getAsLong());
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    private static Anchor readAnchor(JsonObject obj, String key) {
+        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
+            return null;
+        }
+        return Anchor.tryParse(obj.get(key).getAsString());
     }
 }

@@ -131,9 +131,7 @@ public class ConfigScreen extends Screen {
             bg.centerX() - bg.width() / 2,
             bg.centerY() - bg.height() / 2,
             bg.centerX() + bg.width() / 2,
-            bg.centerY() + bg.height() / 2,
-            COLOR_BG_BASE
-        );
+            bg.centerY() + bg.height() / 2, COLOR_BG_BASE);
         for (FieldLabel label : fieldLabels) {
             graphics.centeredText(font, label.text(), label.x(), label.y(), COLOR_TEXT_MUTED);
         }

@@ -1,4 +1,13 @@
 {
+  "name": "Cat",
+  "author": "notnightsky",
+  "description": "A cat companion",
+  "suggested": {
+    "width": 100,
+    "height": 100,
+    "frametime": 100,
+    "anchor": "bottom_right"
+  },
   "textures": [
     "cat_0",
     "cat_1"

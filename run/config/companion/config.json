@@ -1,7 +1,16 @@
 {
   "schema": 1,
-  "selected": "hsr/hsr.json",
-  "frametime": 100,
+  "selected": "cat_alt/cat_alt.json",
+  "position": {
+    "anchor": "bottom_left",
+    "offset": {
+      "x": 0,
+      "y": 0
+    }
+  },
   "width": 100,
-  "height": 100
+  "height": 64,
+  "frametime": 1000,
+  "visible": true,
+  "opacity": 1.0
 }
