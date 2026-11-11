@@ -4,12 +4,16 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.notnightsky.companion.config.ConfigManager;
+import org.notnightsky.companion.config.screen.widgets.ActionButton;
+import org.notnightsky.companion.config.screen.widgets.AnchorButton;
 import org.notnightsky.companion.config.screen.widgets.NumberField;
 import org.notnightsky.companion.config.screen.widgets.TextureSwitcher;
-import org.notnightsky.companion.render.Renderer;
+import org.notnightsky.companion.config.screen.widgets.ToggleButton;
+import org.notnightsky.companion.render.Anchor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 
 public class ConfigScreen extends Screen {
@@ -35,16 +39,20 @@ public class ConfigScreen extends Screen {
         this.parent = parent;
     }
 
-    private static final int FIELD_WIDTH = 120;
+    private static final int FIELD_WIDTH = 68;
     private static final int FIELD_HEIGHT = 20;
     private static final int LABEL_GAP = 4;
     private static final int FIELD_GAP = 12;
+    private static final int COLUMN_GAP = 12;
+    private static final int SUGGEST_GAP = 6;
+    private static final int SUGGEST_WIDTH = 56;
 
     private static final int SWITCHER_HEIGHT = 20;
     private static final int LAYOUT_PADDING = 20;
     private static final int SWITCHER_GAP = 16;
 
     private final List<FieldLabel> fieldLabels = new ArrayList<>();
+    private boolean pendingRebuild;
 
     private record FieldLabel(String text, int x, int y) {
     }
@@ -56,14 +64,14 @@ public class ConfigScreen extends Screen {
         return LAYOUT_PADDING
             + SWITCHER_HEIGHT
             + SWITCHER_GAP
-            + 3 * (this.font.lineHeight + LABEL_GAP + FIELD_HEIGHT)
-            + 2 * FIELD_GAP
+            + 4 * (this.font.lineHeight + LABEL_GAP + FIELD_HEIGHT)
+            + 3 * FIELD_GAP
             + LAYOUT_PADDING;
     }
 
     private BackgroundRect backgroundRect() {
         int margin = Math.clamp(
-            Math.min(60, Math.min((this.width - 280) / 2, (this.height - 320) / 2)),
+            Math.min(60, Math.min((this.width - 312) / 2, (this.height - 260) / 2)),
             8,
             60
         );
@@ -89,32 +97,71 @@ public class ConfigScreen extends Screen {
             bg.centerX() - switcherWidth / 2,
             startY,
             switcherWidth,
-            SWITCHER_HEIGHT
+            SWITCHER_HEIGHT,
+            this::requestRebuild
         ));
 
         ConfigManager config = ConfigManager.getInstance();
-        int fieldX = bg.centerX() - FIELD_WIDTH / 2;
+        int columnWidth = FIELD_WIDTH + SUGGEST_GAP + SUGGEST_WIDTH;
+        int leftX = bg.centerX() - (2 * columnWidth + COLUMN_GAP) / 2;
+        int rightX = leftX + columnWidth + COLUMN_GAP;
         int y = startY + SWITCHER_HEIGHT + SWITCHER_GAP;
-        y = addNumberField(fieldX, y, "Frametime", config.getFrametime(), 1, 10000, value -> {
-            config.setFrametime(value);
-            Renderer.setFrameTime(value);
-            config.save();
-        });
-        y = addNumberField(fieldX, y, "Width", config.getWidth(), 1, 512, value -> {
+        addNumberField(leftX, y, "Width", config.getWidth(), 1, 512, value -> {
             config.setWidth((int) value);
-            Renderer.setWidth((int) value);
             config.save();
-        });
-        addNumberField(fieldX, y, "Height", config.getHeight(), 1, 512, value -> {
+        }, config.getSuggestedWidth());
+        y = addNumberField(rightX, y, "Height", config.getHeight(), 1, 512, value -> {
             config.setHeight((int) value);
-            Renderer.setHeight((int) value);
+            config.save();
+        }, config.getSuggestedHeight());
+        addNumberField(leftX, y, "Frametime", config.getFrametime(), 1, 10000, value -> {
+            config.setFrametime(value);
+            config.save();
+        }, config.getSuggestedFrametime());
+        y = addAnchorButton(rightX, y, config.getAnchor(), anchor -> {
+            config.setAnchor(anchor);
             config.save();
         });
+        addNumberField(leftX, y, "Offset X", config.getOffsetX(), -4096, 4096, value -> {
+            config.setOffsetX((int) value);
+            config.save();
+        }, null);
+        y = addNumberField(rightX, y, "Offset Y", config.getOffsetY(), -4096, 4096, value -> {
+            config.setOffsetY((int) value);
+            config.save();
+        }, null);
+        addToggleButton(leftX, y, config.isVisible(), visible -> {
+            config.setVisible(visible);
+            config.save();
+        });
+        addNumberField(rightX, y, "Opacity", Math.round(config.getOpacity() * 100), 0, 100, value -> {
+            config.setOpacity(value / 100.0);
+            config.save();
+        }, null);
     }
 
-    private int addNumberField(int x, int y, String label, long initial, long min, long max, LongConsumer apply) {
+    private int addNumberField(int x, int y, String label, long initial, long min, long max, LongConsumer apply, Number suggested) {
         fieldLabels.add(new FieldLabel(label, x + FIELD_WIDTH / 2, y));
-        addRenderableWidget(new NumberField(x, y + this.font.lineHeight + LABEL_GAP, FIELD_WIDTH, FIELD_HEIGHT, String.valueOf(initial), min, max, apply));
+        int fieldY = y + this.font.lineHeight + LABEL_GAP;
+        NumberField field = addRenderableWidget(new NumberField(x, fieldY, FIELD_WIDTH, FIELD_HEIGHT, String.valueOf(initial), min, max, apply));
+        if (suggested != null) {
+            addRenderableWidget(new ActionButton(x + FIELD_WIDTH + SUGGEST_GAP, fieldY, SUGGEST_WIDTH, FIELD_HEIGHT, () -> {
+                apply.accept(suggested.longValue());
+                field.set(suggested.longValue());
+            }));
+        }
+        return fieldY + FIELD_HEIGHT + FIELD_GAP;
+    }
+
+    private int addAnchorButton(int x, int y, Anchor initial, Consumer<Anchor> onSelect) {
+        fieldLabels.add(new FieldLabel("Anchor", x + FIELD_WIDTH / 2, y));
+        addRenderableWidget(new AnchorButton(x, y + this.font.lineHeight + LABEL_GAP, FIELD_WIDTH, FIELD_HEIGHT, initial, onSelect));
+        return y + this.font.lineHeight + LABEL_GAP + FIELD_HEIGHT + FIELD_GAP;
+    }
+
+    private int addToggleButton(int x, int y, boolean initial, Consumer<Boolean> onSelect) {
+        fieldLabels.add(new FieldLabel("Visible", x + FIELD_WIDTH / 2, y));
+        addRenderableWidget(new ToggleButton(x, y + this.font.lineHeight + LABEL_GAP, FIELD_WIDTH, FIELD_HEIGHT, initial, onSelect));
         return y + this.font.lineHeight + LABEL_GAP + FIELD_HEIGHT + FIELD_GAP;
     }
 
@@ -124,6 +171,18 @@ public class ConfigScreen extends Screen {
         ConfigManager.getInstance().save();
     }
 
+    private void requestRebuild() {
+        this.pendingRebuild = true;
+    }
+
+    @Override
+    public void tick() {
+        if (this.pendingRebuild) {
+            this.pendingRebuild = false;
+            rebuildWidgets();
+        }
+    }
+
     @Override
     public void extractRenderState(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
         BackgroundRect bg = backgroundRect();
@@ -131,9 +190,7 @@ public class ConfigScreen extends Screen {
             bg.centerX() - bg.width() / 2,
             bg.centerY() - bg.height() / 2,
             bg.centerX() + bg.width() / 2,
-            bg.centerY() + bg.height() / 2,
-            COLOR_BG_BASE
-        );
+            bg.centerY() + bg.height() / 2, COLOR_BG_BASE);
         for (FieldLabel label : fieldLabels) {
             graphics.centeredText(font, label.text(), label.x(), label.y(), COLOR_TEXT_MUTED);
         }

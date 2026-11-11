@@ -22,7 +22,7 @@ public class NumberField extends EditBox {
         this.onChange = onChange;
         this.applied = clamp(Long.parseLong(initial));
 
-        setMaxLength(String.valueOf(max).length());
+        setMaxLength(String.valueOf(max).length() + (min < 0 ? 1 : 0));
         setBordered(false);
         setHint(Component.literal("0"));
         setTextColor(ConfigScreen.COLOR_TEXT_PRIMARY);
@@ -56,9 +56,20 @@ public class NumberField extends EditBox {
         }
     }
 
+    public void set(long value) {
+        long clamped = clamp(value);
+        this.updating = true;
+        setValue(String.valueOf(clamped));
+        this.updating = false;
+        this.applied = clamped;
+    }
+
     @Override
     public void insertText(String text) {
         String digits = text.replaceAll("\\D", "");
+        if (this.min < 0 && text.contains("-")) {
+            digits = "-" + digits;
+        }
         if (!digits.isEmpty()) {
             super.insertText(digits);
         }

@@ -26,10 +26,10 @@ public class CompanionClient implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("companion");
 
     public static Path getConfigPath() {
+        if (Files.exists(CONFIG_PATH)) {
+            return CONFIG_PATH;
+        }
         try {
-            if (Files.exists(CONFIG_PATH)) {
-                return CONFIG_PATH;
-            }
             Files.createDirectories(CONFIG_PATH);
         } catch (IOException e) {
             LOGGER.error("Failed to create or access the mod configuration directory.", e);
@@ -43,9 +43,6 @@ public class CompanionClient implements ClientModInitializer {
         ConfigManager config = ConfigManager.getInstance();
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
             config.load();
-            Renderer.setFrameTime(config.getFrametime());
-            Renderer.setWidth(config.getWidth());
-            Renderer.setHeight(config.getHeight());
             TEXTURE_SETS.addAll(Textures.scan());
             select(config.getSelected());
         });
@@ -64,6 +61,7 @@ public class CompanionClient implements ClientModInitializer {
         activeSetIndex = index;
         Renderer.setTextures(activeTextures);
         ConfigManager config = ConfigManager.getInstance();
+        config.setActiveSuggestions(Textures.parseSuggestions(TEXTURE_SETS.get(index).json()));
         config.setSelected(Textures.relativePath(TEXTURE_SETS.get(index).jsonPath()));
         config.save();
     }

@@ -2,9 +2,10 @@ package org.notnightsky.companion.config;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import org.notnightsky.companion.CompanionClient;
+import org.notnightsky.companion.render.Anchor;
+import org.notnightsky.companion.util.Textures;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -12,10 +13,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class ConfigManager {
-    private static final int SCHEMA = 1;
-    private static final long DEFAULT_FRAMETIME = 1000;
-    private static final int DEFAULT_WIDTH = 32;
-    private static final int DEFAULT_HEIGHT = 16;
+    public static final int SCHEMA = 1;
+    public static final long DEFAULT_FRAMETIME = 1000;
+    public static final int DEFAULT_WIDTH = 32;
+    public static final int DEFAULT_HEIGHT = 16;
+    public static final Anchor DEFAULT_ANCHOR = Anchor.BOTTOM_RIGHT;
 
     private static ConfigManager instance;
 
@@ -23,6 +25,12 @@ public class ConfigManager {
     private long frametime = DEFAULT_FRAMETIME;
     private int width = DEFAULT_WIDTH;
     private int height = DEFAULT_HEIGHT;
+    private Anchor anchor = DEFAULT_ANCHOR;
+    private Textures.Suggestions activeSuggestions = new Textures.Suggestions(null, null, null, null);
+    private int offsetX;
+    private int offsetY;
+    private boolean visible = true;
+    private double opacity = 1.0;
 
     private ConfigManager() {
     }
@@ -42,17 +50,35 @@ public class ConfigManager {
         }
         try (FileReader reader = new FileReader(file.toFile())) {
             JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
-            if (json.has("schema") && json.get("schema").getAsInt() > SCHEMA) {
-                CompanionClient.LOGGER.warn("config.json was written for schema {} (supported: {}), resetting it.", json.get("schema").getAsInt(), SCHEMA);
+            if (readInt(json, "schema", SCHEMA) > SCHEMA) {
+                CompanionClient.LOGGER.warn("config.json was written for a newer schema (supported: {}), resetting it.", SCHEMA);
                 save();
                 return;
             }
-            frametime = json.has("frametime") ? Math.max(1, json.get("frametime").getAsLong()) : DEFAULT_FRAMETIME;
-            width = json.has("width") ? Math.max(1, json.get("width").getAsInt()) : DEFAULT_WIDTH;
-            height = json.has("height") ? Math.max(1, json.get("height").getAsInt()) : DEFAULT_HEIGHT;
-            selected = json.has("selected") && json.get("selected").isJsonPrimitive() ? json.get("selected").getAsString() : "";
-        } catch (IOException | IllegalStateException | JsonParseException e) {
+            Long parsedFrametime = readPositiveLong(json, "frametime");
+            frametime = parsedFrametime != null ? parsedFrametime : DEFAULT_FRAMETIME;
+            Integer parsedWidth = readPositiveInt(json, "width");
+            width = parsedWidth != null ? parsedWidth : DEFAULT_WIDTH;
+            Integer parsedHeight = readPositiveInt(json, "height");
+            height = parsedHeight != null ? parsedHeight : DEFAULT_HEIGHT;
+            selected = readString(json, "selected", "");
+            if (json.has("position") && json.get("position").isJsonObject()) {
+                JsonObject position = json.getAsJsonObject("position");
+                Anchor parsedAnchor = readAnchor(position, "anchor");
+                anchor = parsedAnchor != null ? parsedAnchor : DEFAULT_ANCHOR;
+                JsonObject offset = position.has("offset") && position.get("offset").isJsonObject() ? position.getAsJsonObject("offset") : position;
+                offsetX = readInt(offset, "x", 0);
+                offsetY = readInt(offset, "y", 0);
+            } else {
+                anchor = DEFAULT_ANCHOR;
+                offsetX = 0;
+                offsetY = 0;
+            }
+            visible = readBoolean(json, "visible", true);
+            opacity = Math.clamp(readDouble(json, "opacity", 1.0), 0.0, 1.0);
+        } catch (IOException | RuntimeException e) {
             CompanionClient.LOGGER.warn("Failed to read config.json, resetting it.", e);
+            resetToDefaults();
             save();
         }
     }
@@ -61,9 +87,18 @@ public class ConfigManager {
         JsonObject json = new JsonObject();
         json.addProperty("schema", SCHEMA);
         json.addProperty("selected", selected);
-        json.addProperty("frametime", frametime);
+        JsonObject position = new JsonObject();
+        position.addProperty("anchor", anchor.name().toLowerCase());
+        JsonObject offset = new JsonObject();
+        offset.addProperty("x", offsetX);
+        offset.addProperty("y", offsetY);
+        position.add("offset", offset);
+        json.add("position", position);
         json.addProperty("width", width);
         json.addProperty("height", height);
+        json.addProperty("frametime", frametime);
+        json.addProperty("visible", visible);
+        json.addProperty("opacity", opacity);
         try {
             Files.writeString(configFile(), new GsonBuilder().setPrettyPrinting().create().toJson(json));
         } catch (IOException e) {
@@ -71,8 +106,93 @@ public class ConfigManager {
         }
     }
 
+    private void resetToDefaults() {
+        selected = "";
+        frametime = DEFAULT_FRAMETIME;
+        width = DEFAULT_WIDTH;
+        height = DEFAULT_HEIGHT;
+        anchor = DEFAULT_ANCHOR;
+        offsetX = 0;
+        offsetY = 0;
+        visible = true;
+        opacity = 1.0;
+    }
+
     private static Path configFile() {
         return CompanionClient.getConfigPath().resolve("config.json");
+    }
+
+    private static Integer readPositiveInt(JsonObject obj, String key) {
+        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
+            return null;
+        }
+        try {
+            return Math.max(1, obj.get(key).getAsInt());
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    private static Long readPositiveLong(JsonObject obj, String key) {
+        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
+            return null;
+        }
+        try {
+            return Math.max(1, obj.get(key).getAsLong());
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    private static int readInt(JsonObject obj, String key, int fallback) {
+        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
+            return fallback;
+        }
+        try {
+            return obj.get(key).getAsInt();
+        } catch (RuntimeException e) {
+            return fallback;
+        }
+    }
+
+    private static double readDouble(JsonObject obj, String key, double fallback) {
+        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
+            return fallback;
+        }
+        try {
+            return obj.get(key).getAsDouble();
+        } catch (RuntimeException e) {
+            return fallback;
+        }
+    }
+
+    private static boolean readBoolean(JsonObject obj, String key, boolean fallback) {
+        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
+            return fallback;
+        }
+        try {
+            return obj.get(key).getAsBoolean();
+        } catch (RuntimeException e) {
+            return fallback;
+        }
+    }
+
+    private static String readString(JsonObject obj, String key, String fallback) {
+        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
+            return fallback;
+        }
+        try {
+            return obj.get(key).getAsString();
+        } catch (RuntimeException e) {
+            return fallback;
+        }
+    }
+
+    private static Anchor readAnchor(JsonObject obj, String key) {
+        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
+            return null;
+        }
+        return Anchor.tryParse(obj.get(key).getAsString());
     }
 
     public String getSelected() {
@@ -80,30 +200,118 @@ public class ConfigManager {
     }
 
     public void setSelected(String selected) {
-        this.selected = selected;
+        this.selected = selected == null ? "" : selected;
     }
 
     public long getFrametime() {
         return frametime;
     }
 
-    public void setFrametime(long frametime) {
+    public void setFrametime(Long frametime) {
+        if (frametime == null) {
+            clearFrametime();
+            return;
+        }
         this.frametime = Math.max(1, frametime);
+    }
+
+    public void clearFrametime() {
+        this.frametime = DEFAULT_FRAMETIME;
     }
 
     public int getWidth() {
         return width;
     }
 
-    public void setWidth(int width) {
+    public void setWidth(Integer width) {
+        if (width == null) {
+            clearWidth();
+            return;
+        }
         this.width = Math.max(1, width);
+    }
+
+    public void clearWidth() {
+        this.width = DEFAULT_WIDTH;
     }
 
     public int getHeight() {
         return height;
     }
 
-    public void setHeight(int height) {
+    public void setHeight(Integer height) {
+        if (height == null) {
+            clearHeight();
+            return;
+        }
         this.height = Math.max(1, height);
+    }
+
+    public void clearHeight() {
+        this.height = DEFAULT_HEIGHT;
+    }
+
+    public Anchor getAnchor() {
+        return anchor;
+    }
+
+    public void setAnchor(Anchor anchor) {
+        if (anchor == null) {
+            clearAnchor();
+            return;
+        }
+        this.anchor = anchor;
+    }
+
+    public void clearAnchor() {
+        this.anchor = DEFAULT_ANCHOR;
+    }
+
+    public void setActiveSuggestions(Textures.Suggestions suggestions) {
+        this.activeSuggestions = suggestions == null ? new Textures.Suggestions(null, null, null, null) : suggestions;
+    }
+
+    public Integer getSuggestedWidth() {
+        return activeSuggestions.width();
+    }
+
+    public Integer getSuggestedHeight() {
+        return activeSuggestions.height();
+    }
+
+    public Long getSuggestedFrametime() {
+        return activeSuggestions.frametime();
+    }
+
+    public int getOffsetX() {
+        return offsetX;
+    }
+
+    public void setOffsetX(int offsetX) {
+        this.offsetX = offsetX;
+    }
+
+    public int getOffsetY() {
+        return offsetY;
+    }
+
+    public void setOffsetY(int offsetY) {
+        this.offsetY = offsetY;
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+    }
+
+    public double getOpacity() {
+        return opacity;
+    }
+
+    public void setOpacity(double opacity) {
+        this.opacity = Math.clamp(opacity, 0.0, 1.0);
     }
 }
