@@ -1,5 +1,6 @@
 package org.notnightsky.companion.config.screen;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -7,6 +8,7 @@ import org.notnightsky.companion.config.ConfigManager;
 import org.notnightsky.companion.config.screen.widgets.ActionButton;
 import org.notnightsky.companion.config.screen.widgets.AnchorButton;
 import org.notnightsky.companion.config.screen.widgets.NumberField;
+import org.notnightsky.companion.config.screen.widgets.StyledButton;
 import org.notnightsky.companion.config.screen.widgets.TextureSwitcher;
 import org.notnightsky.companion.config.screen.widgets.ToggleButton;
 import org.notnightsky.companion.render.Anchor;
@@ -64,14 +66,14 @@ public class ConfigScreen extends Screen {
         return LAYOUT_PADDING
             + SWITCHER_HEIGHT
             + SWITCHER_GAP
-            + 4 * (this.font.lineHeight + LABEL_GAP + FIELD_HEIGHT)
-            + 3 * FIELD_GAP
+            + 5 * (this.font.lineHeight + LABEL_GAP + FIELD_HEIGHT)
+            + 4 * FIELD_GAP
             + LAYOUT_PADDING;
     }
 
     private BackgroundRect backgroundRect() {
         int margin = Math.clamp(
-            Math.min(60, Math.min((this.width - 312) / 2, (this.height - 260) / 2)),
+            Math.min(60, Math.min((this.width - 312) / 2, (this.height - 292) / 2)),
             8,
             60
         );
@@ -103,7 +105,8 @@ public class ConfigScreen extends Screen {
 
         ConfigManager config = ConfigManager.getInstance();
         int columnWidth = FIELD_WIDTH + SUGGEST_GAP + SUGGEST_WIDTH;
-        int leftX = bg.centerX() - (2 * columnWidth + COLUMN_GAP) / 2;
+        int gridWidth = 2 * columnWidth + COLUMN_GAP;
+        int leftX = bg.centerX() - gridWidth / 2;
         int rightX = leftX + columnWidth + COLUMN_GAP;
         int y = startY + SWITCHER_HEIGHT + SWITCHER_GAP;
         addNumberField(leftX, y, "Width", config.getWidth(), 1, 512, value -> {
@@ -134,10 +137,16 @@ public class ConfigScreen extends Screen {
             config.setVisible(visible);
             config.save();
         });
-        addNumberField(rightX, y, "Opacity", Math.round(config.getOpacity() * 100), 0, 100, value -> {
+        y = addNumberField(rightX, y, "Opacity", Math.round(config.getOpacity() * 100), 0, 100, value -> {
             config.setOpacity(value / 100.0);
             config.save();
         }, null);
+        addRenderableWidget(new StyledButton(leftX, y, gridWidth, FIELD_HEIGHT, Component.literal("Move…")) {
+            @Override
+            protected void press() {
+                Minecraft.getInstance().gui.setScreen(new MoveScreen(ConfigScreen.this));
+            }
+        });
     }
 
     private int addNumberField(int x, int y, String label, long initial, long min, long max, LongConsumer apply, Number suggested) {

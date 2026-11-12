@@ -25,17 +25,26 @@ public class Renderer {
         int width = config.getWidth();
         int height = config.getHeight();
         long frameTime = config.getFrametime();
-        Anchor anchor = config.getAnchor();
-        int x = switch (anchor) {
-            case TOP_LEFT, BOTTOM_LEFT -> config.getOffsetX();
-            case TOP_RIGHT, BOTTOM_RIGHT -> graphics.guiWidth() - width - config.getOffsetX();
-        };
-        int y = switch (anchor) {
-            case TOP_LEFT, TOP_RIGHT -> config.getOffsetY();
-            case BOTTOM_LEFT, BOTTOM_RIGHT -> graphics.guiHeight() - height - config.getOffsetY();
-        };
+        int x = renderX(graphics.guiWidth());
+        int y = renderY(graphics.guiHeight());
         int color = ARGB.white((int) (config.getOpacity() * 255.0));
         graphics.blit(RenderPipelines.GUI_TEXTURED, texture(frameIndex(frameTime)), x, y, 0.0F, 0.0F, width, height, width, height, color);
+    }
+
+    public static int renderX(int guiWidth) {
+        ConfigManager config = ConfigManager.getInstance();
+        return switch (config.getAnchor()) {
+            case TOP_LEFT, BOTTOM_LEFT -> config.getOffsetX();
+            case TOP_RIGHT, BOTTOM_RIGHT -> guiWidth - config.getWidth() - config.getOffsetX();
+        };
+    }
+
+    public static int renderY(int guiHeight) {
+        ConfigManager config = ConfigManager.getInstance();
+        return switch (config.getAnchor()) {
+            case TOP_LEFT, TOP_RIGHT -> config.getOffsetY();
+            case BOTTOM_LEFT, BOTTOM_RIGHT -> guiHeight - config.getHeight() - config.getOffsetY();
+        };
     }
 
     private static int frameIndex(long frameTimeMs) {
