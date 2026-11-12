@@ -108,11 +108,11 @@ public class ConfigScreen extends Screen {
         int leftX = bg.centerX() - gridWidth / 2;
         int rightX = leftX + columnWidth + COLUMN_GAP;
         int y = startY + SWITCHER_HEIGHT + SWITCHER_GAP;
-        addNumberField(leftX, y, "Width", config.getWidth(), 1, 512, value -> {
+        addNumberField(leftX, y, "Width", config.getWidth(), 1, 2048, value -> {
             config.setWidth((int) value);
             config.save();
         }, config.getSuggestedWidth());
-        y = addNumberField(rightX, y, "Height", config.getHeight(), 1, 512, value -> {
+        y = addNumberField(rightX, y, "Height", config.getHeight(), 1, 2048, value -> {
             config.setHeight((int) value);
             config.save();
         }, config.getSuggestedHeight());

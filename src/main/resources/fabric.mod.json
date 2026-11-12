@@ -3,11 +3,15 @@
   "id": "companion",
   "version": "${version}",
   "name": "companion",
-  "description": "",
-  "authors": [],
-  "contact": {},
-  "license": "All-Rights-Reserved",
-  "icon": "assets/companion/icon.png",
+  "description": "Have your own companion!!",
+  "authors": ["NotNightSky"],
+  "contact": {
+    "homepage": "https://modrinth.com/mod/companion2d",
+    "sources": "https://github.com/NotNightsky/companion",
+    "issues": "https://github.com/NotNightsky/companion/issues"
+  },
+  "license": "MIT",
+  "icon": "assets/companion/companion.png",
   "environment": "client",
   "entrypoints": {
     "client": [
@@ -25,6 +29,9 @@
   ],
   "custom": {
     "modmenu": {
+      "links": {
+        "companion.wiki": "https://github.com/NotNightsky/companion/wiki"
+      },
       "update_checker": true
     }
   },
@@ -32,6 +39,6 @@
     "fabricloader": ">=${loader_version}",
     "fabric-api": "*",
     "minecraft": "${minecraft_version}",
-    "modmenu": "${modmenu_version}"
+    "modmenu": ">=${modmenu_version}"
   }
 }
