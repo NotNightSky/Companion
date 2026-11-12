@@ -5,8 +5,7 @@
   "suggested": {
     "width": 100,
     "height": 100,
-    "frametime": 1000,
-    "anchor": "bottom_right"
+    "frametime": 1000
   },
   "textures": [
     "cat_0",
