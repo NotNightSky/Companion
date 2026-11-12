@@ -5,7 +5,6 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.mojang.blaze3d.platform.NativeImage;
 import org.notnightsky.companion.CompanionClient;
-import org.notnightsky.companion.render.Anchor;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -189,63 +188,31 @@ public class Textures {
         return copy;
     }
 
-    public record Suggestions(Integer width, Integer height, Long frametime, Anchor anchor) {}
+    public record Suggestions(Integer width, Integer height, Long frametime) {
+        public static final Suggestions EMPTY = new Suggestions(null, null, null);
+    }
 
     public static Suggestions parseSuggestions(JsonObject json) {
         Integer width = null;
         Integer height = null;
         Long frametime = null;
-        Anchor anchor = null;
 
         if (json.has("suggested") && json.get("suggested").isJsonObject()) {
             JsonObject suggested = json.getAsJsonObject("suggested");
-            width = readPositiveInt(suggested, "width");
-            height = readPositiveInt(suggested, "height");
-            frametime = readPositiveLong(suggested, "frametime");
-            anchor = readAnchor(suggested, "anchor");
+            width = JsonUtils.readPositiveInt(suggested, "width");
+            height = JsonUtils.readPositiveInt(suggested, "height");
+            frametime = JsonUtils.readPositiveLong(suggested, "frametime");
         }
         if (width == null) {
-            width = readPositiveInt(json, "suggested_width");
+            width = JsonUtils.readPositiveInt(json, "suggested_width");
         }
         if (height == null) {
-            height = readPositiveInt(json, "suggested_height");
+            height = JsonUtils.readPositiveInt(json, "suggested_height");
         }
         if (frametime == null) {
-            frametime = readPositiveLong(json, "suggested_frametime");
-        }
-        if (anchor == null) {
-            anchor = readAnchor(json, "suggested_anchor");
+            frametime = JsonUtils.readPositiveLong(json, "suggested_frametime");
         }
 
-        return new Suggestions(width, height, frametime, anchor);
-    }
-
-    private static Integer readPositiveInt(JsonObject obj, String key) {
-        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
-            return null;
-        }
-        try {
-            return Math.max(1, obj.get(key).getAsInt());
-        } catch (RuntimeException e) {
-            return null;
-        }
-    }
-
-    private static Long readPositiveLong(JsonObject obj, String key) {
-        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
-            return null;
-        }
-        try {
-            return Math.max(1, obj.get(key).getAsLong());
-        } catch (RuntimeException e) {
-            return null;
-        }
-    }
-
-    private static Anchor readAnchor(JsonObject obj, String key) {
-        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
-            return null;
-        }
-        return Anchor.tryParse(obj.get(key).getAsString());
+        return new Suggestions(width, height, frametime);
     }
 }

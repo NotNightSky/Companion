@@ -13,15 +13,11 @@
     "client": [
       "org.notnightsky.companion.CompanionClient"
     ],
-    "main": [
-      "org.notnightsky.companion.Companion"
-    ],
     "modmenu": [
       "org.notnightsky.companion.ModmenuImpl"
     ]
   },
   "mixins": [
-    "companion.mixins.json",
     {
       "config": "companion.client.mixins.json",
       "environment": "client"

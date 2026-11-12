@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.notnightsky.companion.CompanionClient;
 import org.notnightsky.companion.render.Anchor;
+import org.notnightsky.companion.util.JsonUtils;
 import org.notnightsky.companion.util.Textures;
 
 import java.io.FileReader;
@@ -26,7 +27,7 @@ public class ConfigManager {
     private int width = DEFAULT_WIDTH;
     private int height = DEFAULT_HEIGHT;
     private Anchor anchor = DEFAULT_ANCHOR;
-    private Textures.Suggestions activeSuggestions = new Textures.Suggestions(null, null, null, null);
+    private Textures.Suggestions activeSuggestions = Textures.Suggestions.EMPTY;
     private int offsetX;
     private int offsetY;
     private boolean visible = true;
@@ -50,32 +51,38 @@ public class ConfigManager {
         }
         try (FileReader reader = new FileReader(file.toFile())) {
             JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
-            if (readInt(json, "schema", SCHEMA) > SCHEMA) {
+            Integer schema = JsonUtils.readInt(json, "schema");
+            if (schema != null && schema > SCHEMA) {
                 CompanionClient.LOGGER.warn("config.json was written for a newer schema (supported: {}), resetting it.", SCHEMA);
                 save();
                 return;
             }
-            Long parsedFrametime = readPositiveLong(json, "frametime");
+            Long parsedFrametime = JsonUtils.readPositiveLong(json, "frametime");
             frametime = parsedFrametime != null ? parsedFrametime : DEFAULT_FRAMETIME;
-            Integer parsedWidth = readPositiveInt(json, "width");
+            Integer parsedWidth = JsonUtils.readPositiveInt(json, "width");
             width = parsedWidth != null ? parsedWidth : DEFAULT_WIDTH;
-            Integer parsedHeight = readPositiveInt(json, "height");
+            Integer parsedHeight = JsonUtils.readPositiveInt(json, "height");
             height = parsedHeight != null ? parsedHeight : DEFAULT_HEIGHT;
-            selected = readString(json, "selected", "");
+            String parsedSelected = JsonUtils.readString(json, "selected");
+            selected = parsedSelected != null ? parsedSelected : "";
             if (json.has("position") && json.get("position").isJsonObject()) {
                 JsonObject position = json.getAsJsonObject("position");
-                Anchor parsedAnchor = readAnchor(position, "anchor");
+                Anchor parsedAnchor = JsonUtils.readAnchor(position, "anchor");
                 anchor = parsedAnchor != null ? parsedAnchor : DEFAULT_ANCHOR;
                 JsonObject offset = position.has("offset") && position.get("offset").isJsonObject() ? position.getAsJsonObject("offset") : position;
-                offsetX = readInt(offset, "x", 0);
-                offsetY = readInt(offset, "y", 0);
+                Integer parsedOffsetX = JsonUtils.readInt(offset, "x");
+                offsetX = parsedOffsetX != null ? parsedOffsetX : 0;
+                Integer parsedOffsetY = JsonUtils.readInt(offset, "y");
+                offsetY = parsedOffsetY != null ? parsedOffsetY : 0;
             } else {
                 anchor = DEFAULT_ANCHOR;
                 offsetX = 0;
                 offsetY = 0;
             }
-            visible = readBoolean(json, "visible", true);
-            opacity = Math.clamp(readDouble(json, "opacity", 1.0), 0.0, 1.0);
+            Boolean parsedVisible = JsonUtils.readBoolean(json, "visible");
+            visible = parsedVisible == null || parsedVisible;
+            Double parsedOpacity = JsonUtils.readDouble(json, "opacity");
+            opacity = Math.clamp(parsedOpacity != null ? parsedOpacity : 1.0, 0.0, 1.0);
         } catch (IOException | RuntimeException e) {
             CompanionClient.LOGGER.warn("Failed to read config.json, resetting it.", e);
             resetToDefaults();
@@ -122,79 +129,6 @@ public class ConfigManager {
         return CompanionClient.getConfigPath().resolve("config.json");
     }
 
-    private static Integer readPositiveInt(JsonObject obj, String key) {
-        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
-            return null;
-        }
-        try {
-            return Math.max(1, obj.get(key).getAsInt());
-        } catch (RuntimeException e) {
-            return null;
-        }
-    }
-
-    private static Long readPositiveLong(JsonObject obj, String key) {
-        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
-            return null;
-        }
-        try {
-            return Math.max(1, obj.get(key).getAsLong());
-        } catch (RuntimeException e) {
-            return null;
-        }
-    }
-
-    private static int readInt(JsonObject obj, String key, int fallback) {
-        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
-            return fallback;
-        }
-        try {
-            return obj.get(key).getAsInt();
-        } catch (RuntimeException e) {
-            return fallback;
-        }
-    }
-
-    private static double readDouble(JsonObject obj, String key, double fallback) {
-        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
-            return fallback;
-        }
-        try {
-            return obj.get(key).getAsDouble();
-        } catch (RuntimeException e) {
-            return fallback;
-        }
-    }
-
-    private static boolean readBoolean(JsonObject obj, String key, boolean fallback) {
-        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
-            return fallback;
-        }
-        try {
-            return obj.get(key).getAsBoolean();
-        } catch (RuntimeException e) {
-            return fallback;
-        }
-    }
-
-    private static String readString(JsonObject obj, String key, String fallback) {
-        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
-            return fallback;
-        }
-        try {
-            return obj.get(key).getAsString();
-        } catch (RuntimeException e) {
-            return fallback;
-        }
-    }
-
-    private static Anchor readAnchor(JsonObject obj, String key) {
-        if (!obj.has(key) || !obj.get(key).isJsonPrimitive()) {
-            return null;
-        }
-        return Anchor.tryParse(obj.get(key).getAsString());
-    }
-
     public String getSelected() {
         return selected;
     }
@@ -207,48 +141,24 @@ public class ConfigManager {
         return frametime;
     }
 
-    public void setFrametime(Long frametime) {
-        if (frametime == null) {
-            clearFrametime();
-            return;
-        }
+    public void setFrametime(long frametime) {
         this.frametime = Math.max(1, frametime);
-    }
-
-    public void clearFrametime() {
-        this.frametime = DEFAULT_FRAMETIME;
     }
 
     public int getWidth() {
         return width;
     }
 
-    public void setWidth(Integer width) {
-        if (width == null) {
-            clearWidth();
-            return;
-        }
+    public void setWidth(int width) {
         this.width = Math.max(1, width);
-    }
-
-    public void clearWidth() {
-        this.width = DEFAULT_WIDTH;
     }
 
     public int getHeight() {
         return height;
     }
 
-    public void setHeight(Integer height) {
-        if (height == null) {
-            clearHeight();
-            return;
-        }
+    public void setHeight(int height) {
         this.height = Math.max(1, height);
-    }
-
-    public void clearHeight() {
-        this.height = DEFAULT_HEIGHT;
     }
 
     public Anchor getAnchor() {
@@ -256,19 +166,11 @@ public class ConfigManager {
     }
 
     public void setAnchor(Anchor anchor) {
-        if (anchor == null) {
-            clearAnchor();
-            return;
-        }
         this.anchor = anchor;
     }
 
-    public void clearAnchor() {
-        this.anchor = DEFAULT_ANCHOR;
-    }
-
     public void setActiveSuggestions(Textures.Suggestions suggestions) {
-        this.activeSuggestions = suggestions == null ? new Textures.Suggestions(null, null, null, null) : suggestions;
+        this.activeSuggestions = suggestions == null ? Textures.Suggestions.EMPTY : suggestions;
     }
 
     public Integer getSuggestedWidth() {

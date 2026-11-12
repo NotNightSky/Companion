@@ -25,7 +25,6 @@ public class ConfigScreen extends Screen {
     public static final int COLOR_ACCENT_HOVER   = 0xFFFF6D5D;
 
     public static final int COLOR_BG_BASE        = 0xFF0F1115;
-    public static final int COLOR_SURFACE_PANEL  = 0xFF181A20;
     public static final int COLOR_SURFACE_CARD   = 0xFF21242C;
     public static final int COLOR_BUTTON_DEFAULT = 0xFF323846;
 

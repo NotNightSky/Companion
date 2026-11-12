@@ -56,7 +56,7 @@ public class IdentifierArray {
         return identifiers;
     }
 
-    public static Identifier loadTexture(String name, Path png) {
+    private static Identifier loadTexture(String name, Path png) {
         try (InputStream stream = new FileInputStream(png.toFile())) {
             NativeImage image = NativeImage.read(stream);
             DynamicTexture texture = new DynamicTexture(() -> "companion/" + name, image);
@@ -69,7 +69,7 @@ public class IdentifierArray {
         return null;
     }
 
-    public static List<Identifier> loadGifTextures(String baseName, Path gif) {
+    private static List<Identifier> loadGifTextures(String baseName, Path gif) {
         List<Identifier> frameIds = new ArrayList<>();
         try {
             List<Textures.GifFrame> frames = Textures.decodeGif(gif);

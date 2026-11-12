@@ -15,7 +15,7 @@ public class HudMixin {
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void companion$onRender(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
         if (Minecraft.getInstance().gui.screen() == null) {
-            Renderer.render(graphics, 0, 0, deltaTracker.getRealtimeDeltaTicks());
+            Renderer.render(graphics);
         }
     }
 }
