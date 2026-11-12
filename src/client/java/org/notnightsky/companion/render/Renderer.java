@@ -2,7 +2,6 @@ package org.notnightsky.companion.render;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Util;
@@ -14,7 +13,7 @@ import java.util.List;
 public class Renderer {
     private static final List<Identifier> textures = new ArrayList<>();
 
-    public static void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+    public static void render(GuiGraphicsExtractor graphics) {
         if (textures.isEmpty()) {
             return;
         }
@@ -52,9 +51,6 @@ public class Renderer {
     }
 
     private static Identifier texture(int index) {
-        if (textures.isEmpty()) {
-            return MissingTextureAtlasSprite.getLocation();
-        }
         return textures.get(Math.floorMod(index, textures.size()));
     }
 

@@ -12,6 +12,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ScreenMixin {
     @Inject(method = "extractRenderStateWithTooltipAndSubtitles", at = @At("TAIL"))
     private void companion$onExtract(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a, CallbackInfo ci) {
-        Renderer.render(graphics, mouseX, mouseY, a);
+        Renderer.render(graphics);
     }
 }
