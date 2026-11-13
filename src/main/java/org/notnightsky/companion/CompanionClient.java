@@ -1,10 +1,15 @@
 package org.notnightsky.companion;
 
-import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.Identifier;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import org.notnightsky.companion.config.ConfigManager;
+import org.notnightsky.companion.config.screen.ConfigScreen;
 import org.notnightsky.companion.render.Renderer;
 import org.notnightsky.companion.util.IdentifierArray;
 import org.notnightsky.companion.util.Textures;
@@ -18,12 +23,30 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CompanionClient implements ClientModInitializer {
-    private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("companion");
+@Mod(value = CompanionClient.MODID, dist = Dist.CLIENT)
+public class CompanionClient {
+    public static final String MODID = "companion";
+    private static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get().resolve(MODID);
     public static final List<TextureSet> TEXTURE_SETS = new ArrayList<>();
     private static List<Identifier> activeTextures = List.of();
     private static int activeSetIndex = -1;
-    public static final Logger LOGGER = LoggerFactory.getLogger("companion");
+    public static final Logger LOGGER = LoggerFactory.getLogger(MODID);
+
+    public CompanionClient(IEventBus modEventBus, ModContainer modContainer) {
+        getConfigPath();
+        modContainer.registerExtensionPoint(IConfigScreenFactory.class,
+                (container, parent) -> new ConfigScreen(parent));
+        modEventBus.addListener(this::onClientSetup);
+    }
+
+    private void onClientSetup(FMLClientSetupEvent event) {
+        event.enqueueWork(() -> {
+            ConfigManager config = ConfigManager.getInstance();
+            config.load();
+            TEXTURE_SETS.addAll(Textures.scan());
+            select(config.getSelected());
+        });
+    }
 
     public static Path getConfigPath() {
         if (Files.exists(CONFIG_PATH)) {
@@ -35,17 +58,6 @@ public class CompanionClient implements ClientModInitializer {
             LOGGER.error("Failed to create or access the mod configuration directory.", e);
         }
         return CONFIG_PATH;
-    }
-
-    @Override
-    public void onInitializeClient() {
-        getConfigPath();
-        ConfigManager config = ConfigManager.getInstance();
-        ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
-            config.load();
-            TEXTURE_SETS.addAll(Textures.scan());
-            select(config.getSelected());
-        });
     }
 
     public static int getActiveSetIndex() {
@@ -82,6 +94,6 @@ public class CompanionClient implements ClientModInitializer {
     }
 
     public static Identifier id(String path) {
-        return Identifier.fromNamespaceAndPath("companion", path);
+        return Identifier.fromNamespaceAndPath(MODID, path);
     }
 }
