@@ -9,10 +9,6 @@ A lightweight, client-side Fabric mod that brings animated 2D companions to your
 - Supports GIFs and PNGs.
 - Movable and resizable companion.
 
-## Requirements
-
-Minecraft 26.3 · Fabric Loader 0.20.1+ · Fabric API · ModMenu 21.0.0+ · Java 25
-
 ## Installation
 
 1. Install Fabric Loader, [Fabric API](https://modrinth.com/mod/fabric-api), and [ModMenu](https://modrinth.com/mod/modmenu).
