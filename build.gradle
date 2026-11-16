@@ -1,5 +1,6 @@
 plugins {
     id 'net.fabricmc.fabric-loom' version '1.19.4'
+    id "me.modmuss50.mod-publish-plugin" version "2.2.1"
     id 'maven-publish'
 }
 
@@ -85,6 +86,118 @@ java {
 jar {
     from("LICENSE") {
         rename { "${it}_${project.archives_base_name}" }
+    }
+}
+
+def changelogFile = layout.buildDirectory.file("changelog.txt")
+
+tasks.register("generateChangelog") {
+    group = "publishing"
+    description = "Builds the changelog from git commit messages between lastTag and currentTag"
+
+    inputs.property("lastTag", project.providers.gradleProperty("lastTag").orElse(""))
+    inputs.property("currentTag", project.providers.gradleProperty("currentTag").orElse(""))
+    inputs.property("maxCommits", project.providers.gradleProperty("changelog_max_commit_search").orElse("100"))
+    outputs.file(changelogFile)
+    outputs.upToDateWhen { false }
+
+    doLast {
+        def lastTag = project.providers.gradleProperty("lastTag").getOrNull()
+        def currentTag = project.providers.gradleProperty("currentTag").getOrNull()
+        def maxCommits = project.providers.gradleProperty("changelog_max_commit_search").getOrElse("100")
+        def changelog = "No Changelog Available"
+
+        if (!lastTag || !currentTag) {
+            println "Missing lastTag or currentTag parameters, generating fallback changelog"
+        } else {
+            println "Last version: $lastTag"
+            println "Current version: $currentTag"
+
+            def tagCheck = project.providers.exec {
+                commandLine("git", "rev-parse", "--verify", "--quiet", "refs/tags/$currentTag")
+                ignoreExitValue = true
+            }
+            def target = tagCheck.result.get().exitValue == 0 ? currentTag : "HEAD"
+
+            def commits = project.providers.exec {
+                commandLine("git", "log", "--max-count=$maxCommits", "--pretty=format:%b", "$lastTag..$target")
+                ignoreExitValue = true
+            }
+            def result = commits.result.get()
+            def output = commits.standardOutput.asText.get()
+
+            if (result.exitValue != 0) {
+                println "git log failed (exit ${result.exitValue}):"
+                println commits.standardError.asText.get()
+            } else {
+                def changes = StringBuilder.newInstance()
+                output.eachLine { line ->
+                    def processedLine = line.toString()
+                    if (processedLine.startsWith('"')) {
+                        processedLine = processedLine.substring(1)
+                    }
+                    if (processedLine.endsWith('"')) {
+                        processedLine = processedLine.substring(0, processedLine.length() - 1)
+                    }
+                    if (processedLine.startsWith("- ")) {
+                        if (changes.length() == 0) {
+                            changes << processedLine
+                        } else {
+                            changes << "\n$processedLine"
+                        }
+                    }
+                }
+                if (changes.length() > 0) {
+                    changelog = changes.toString()
+                }
+            }
+        }
+
+        println "Changelog:"
+        println changelog
+        changelogFile.get().asFile.text = changelog
+    }
+}
+
+publishMods {
+    file = jar.archiveFile
+    changelog = providers.environmentVariable("CHANGELOG").orElse(providers.fileContents(changelogFile).asText)
+    type = STABLE
+    modLoaders.add("fabric")
+    modLoaders.add("quilt")
+
+    modrinth {
+        accessToken = providers.environmentVariable("MODRINTH_API_KEY")
+        projectId = "WUZ1RDId"
+        minecraftVersions.add(project.minecraft_version)
+        environment = CLIENT_ONLY
+
+        requires("fabric-api")
+        requires("modmenu")
+    }
+
+    curseforge {
+        accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
+        projectId = "1804384"
+        minecraftVersions.add(project.minecraft_version)
+        client = true
+        javaVersions.add(JavaVersion.toVersion(targetJavaVersion))
+        changelogType = "markdown"
+
+        requires("fabric-api")
+        requires("modmenu")
+    }
+
+    github {
+        accessToken = providers.environmentVariable("GITHUB_TOKEN")
+        repository = "NotNightSky/Companion"
+        commitish = "26.3-FQ"
+    }
+}
+
+["publishMods", "publishGithub", "publishModrinth", "publishCurseforge"].each { name ->
+    tasks.named(name) {
+        dependsOn("generateChangelog")
     }
 }
 
