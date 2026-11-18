@@ -183,6 +183,10 @@ public class ConfigScreen extends Screen {
         this.pendingRebuild = true;
     }
 
+    void refresh() {
+        rebuildWidgets();
+    }
+
     @Override
     public void tick() {
         if (this.pendingRebuild) {
