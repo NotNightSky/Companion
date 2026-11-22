@@ -198,7 +198,7 @@ publishMods {
     github {
         accessToken = providers.environmentVariable("GITHUB_TOKEN")
         repository = "NotNightSky/Companion"
-        commitish = "26.3-FQ"
+        commitish = "26.2-FQ"
         tagName = releaseVersion
     }
 }
