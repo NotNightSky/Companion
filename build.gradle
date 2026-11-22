@@ -7,8 +7,14 @@ plugins {
 version = project.mod_version
 group = project.maven_group
 
+def releaseVersion = providers.gradleProperty("release_version").orElse(project.version.toString())
+
 base {
     archivesName = project.archives_base_name
+}
+
+tasks.withType(Jar).configureEach {
+    archiveVersion.set(releaseVersion)
 }
 
 loom {
@@ -160,6 +166,7 @@ tasks.register("generateChangelog") {
 }
 
 publishMods {
+    version = releaseVersion
     file = jar.archiveFile
     changelog = providers.environmentVariable("CHANGELOG").orElse(providers.fileContents(changelogFile).asText)
     type = STABLE
@@ -192,6 +199,7 @@ publishMods {
         accessToken = providers.environmentVariable("GITHUB_TOKEN")
         repository = "NotNightSky/Companion"
         commitish = "26.3-FQ"
+        tagName = releaseVersion
     }
 }
 
