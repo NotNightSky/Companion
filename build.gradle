@@ -8,6 +8,7 @@ version = project.mod_version
 group = project.maven_group
 
 def releaseVersion = providers.gradleProperty("release_version").orElse(project.version.toString())
+def supportedMinecraftVersions = project.minecraft_versions.split(",").collect { it.trim() }
 
 base {
     archivesName = project.archives_base_name
@@ -54,6 +55,7 @@ dependencies {
 processResources {
     inputs.property "version", project.version
     inputs.property "minecraft_version", project.minecraft_version
+    inputs.property "minecraft_version_range", project.minecraft_version_range
     inputs.property "loader_version", project.loader_version
     inputs.property "modmenu_version", project.modmenu_version
     filteringCharset "UTF-8"
@@ -61,6 +63,7 @@ processResources {
     filesMatching("fabric.mod.json") {
         expand "version": project.version,
                 "minecraft_version": project.minecraft_version,
+                "minecraft_version_range": project.minecraft_version_range,
                 "loader_version": project.loader_version,
                 "modmenu_version": project.modmenu_version
     }
@@ -176,7 +179,7 @@ publishMods {
     modrinth {
         accessToken = providers.environmentVariable("MODRINTH_API_KEY")
         projectId = "WUZ1RDId"
-        minecraftVersions.add(project.minecraft_version)
+        minecraftVersions.addAll(supportedMinecraftVersions)
         environment = CLIENT_ONLY
 
         requires("fabric-api")
@@ -186,7 +189,7 @@ publishMods {
     curseforge {
         accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
         projectId = "1804384"
-        minecraftVersions.add(project.minecraft_version)
+        minecraftVersions.addAll(supportedMinecraftVersions)
         client = true
         javaVersions.add(JavaVersion.toVersion(targetJavaVersion))
         changelogType = "markdown"
@@ -198,7 +201,7 @@ publishMods {
     github {
         accessToken = providers.environmentVariable("GITHUB_TOKEN")
         repository = "NotNightSky/Companion"
-        commitish = "26.2-FQ"
+        commitish = "26.1-FQ"
         tagName = releaseVersion
     }
 }

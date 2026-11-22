@@ -143,7 +143,7 @@ public class ConfigScreen extends Screen {
         addRenderableWidget(new StyledButton(leftX, y, gridWidth, FIELD_HEIGHT, Component.literal("Move…")) {
             @Override
             protected void press() {
-                Minecraft.getInstance().gui.setScreen(new MoveScreen(ConfigScreen.this));
+                Minecraft.getInstance().setScreen(new MoveScreen(ConfigScreen.this));;
             }
         });
     }
@@ -175,7 +175,7 @@ public class ConfigScreen extends Screen {
 
     @Override
     public void onClose() {
-        this.minecraft.gui.setScreen(parent);
+        this.minecraft.setScreen(parent);
         ConfigManager.getInstance().save();
     }
 

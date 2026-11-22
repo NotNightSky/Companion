@@ -218,7 +218,7 @@ public class MoveScreen extends Screen {
         this.dragging = false;
         this.resizing = null;
         ConfigManager.getInstance().save();
-        this.minecraft.gui.setScreen(this.parent);
+        this.minecraft.setScreen(this.parent);
         if (this.parent instanceof ConfigScreen configScreen) {
             configScreen.refresh();
         }
